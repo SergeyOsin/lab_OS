@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
@@ -45,17 +46,27 @@ int main() {
 
         ifstream file(filepath);
 
-        if (!file.is_open()) {
-            string error = "Не удается открыть файл: " + filepath + "' — файл не существует или нет прав на чтение";
+        if (access(filepath.c_str(),F_OK)!=0) {
+            string error = "Файл не существует";
             strncpy(response.mtext, error.c_str(), MAXLEN);
             response.mtext[MAXLEN - 1] = '\0';
-        } else {
-            string content((istreambuf_iterator<char>(file)),
-                         istreambuf_iterator<char>());
+        } 
+        else if (access(filepath.c_str(),R_OK)!=0){
+            string error = "Файл не доступен для чтения";
+            strncpy(response.mtext, error.c_str(), MAXLEN);
+            response.mtext[MAXLEN - 1] = '\0';
+        }
+        else {
+            string content, line;
 
+            while (getline(file,line))
+                content+=line+'\n';
+
+            if (!content.empty()) content.pop_back();
 
             strncpy(response.mtext, content.c_str(), MAXLEN);
             response.mtext[MAXLEN - 1] = '\0';
+            file.close();
         }
 
         if (msgsnd(msgid, &response, strlen(response.mtext) + 1, 0) == -1) {

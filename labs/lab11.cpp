@@ -5,45 +5,49 @@
 
 using namespace std;
 
-struct Thread {
-    int x;
-    int y;
+struct InputData {
+    int first;
+    int second;
 };
 
-void* threads1(void* arg) {
-    struct Thread* t = (struct Thread*)arg;
+ void* thread2(void* arg) {
+        cout << "Порожден 2-ой поток: TID - " << gettid() << endl;
+        struct InputData* t = (struct InputData*)arg;
+        t->first = t->second * 3;
+        cout << "Поток №2: x = " << t->first<< ", y = " << t->second << "\n";
+        string command="ps -T -p ";
+        command+=to_string(getpid());
+        system(command.c_str());
+        return NULL;
+ }
+ 
+void* thread1(void* arg) { 
+    cout << "Порожден 1-ый поток: TID - " << gettid() << endl;
+    pthread_t Pid;
+    struct InputData* t = (struct InputData*)arg;
     for (int i = 0; i < 5; ++i) {  
-        cout << "Поток №1: x = " << t->x << ", y = " << t->y << "\n";
-        sleep(1);  
+        cout << "Поток №1: x = " << ++t->first << ", y = " << ++t->second << "\n";
     }
+    sleep(2); 
+    pthread_create(&Pid, NULL, thread2, t);
+    pthread_join(Pid, NULL);
+    cout<<"Завершился 2-ой поток: "<<endl;
+    string command="ps -T -p ";
+    command+=to_string(getpid());
+    system(command.c_str());
     return NULL;
 }
 
-void* thread2(void* arg) {
-    struct Thread* t = (struct Thread*)arg;
-    t->y = 25;
-    t->x = t->y * 3;
-    cout << "Поток №2: x = " << t->x << ", y = " << t->y << "\n";
-    return NULL;
-}
 
 int main() {
-    pthread_t Pid, PID1;
-    Thread data1 = {0, 0};  
-    Thread data2 = {0, 0}; 
+    pthread_t Pid;
+    InputData data1 = {0, 0};  
 
-    pthread_create(&Pid, NULL, threads1, &data1);
-    sleep(2);
-    system("ps");
-
-    pthread_create(&PID1, NULL, thread2, &data2);
-    system("ps");
-
+    pthread_create(&Pid, NULL, thread1, &data1);
     pthread_join(Pid, NULL);
-    pthread_join(PID1, NULL);
-
+    cout<<"Завершился 1-ый поток: \n";
     system("ps");
-    cout << "Все потоки завершены.\n";
+    cout<<data1.first<<" "<<data1.second<<endl;
 
     return 0;
 }

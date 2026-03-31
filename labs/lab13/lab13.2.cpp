@@ -19,7 +19,7 @@ int main(){
        }
        struct stat StatFile;
        int StatID=fstat(fileID, &StatFile);
-       if (StatID < -1) {
+       if (StatID < 0) {
               cerr << "Не удалось получить атрибуты\n";
               close(fileID);
               return 1;
